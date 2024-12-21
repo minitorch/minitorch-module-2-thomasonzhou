@@ -16,6 +16,7 @@ MAX_DIMS = 32
 
 class IndexingError(RuntimeError):
     "Exception raised for indexing errors."
+
     pass
 
 
@@ -42,9 +43,7 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
-
-    # TODO: Implement for Task 2.1.
-    raise NotImplementedError("Need to implement for Task 2.1")
+    return sum(i * s for i, s in zip(index, strides))
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -60,31 +59,9 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    # TODO: Implement for Task 2.1.
-    raise NotImplementedError("Need to implement for Task 2.1")
-
-
-def broadcast_index(
-    big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
-) -> None:
-    """
-    Convert a `big_index` into `big_shape` to a smaller `out_index`
-    into `shape` following broadcasting rules. In this case
-    it may be larger or with more dimensions than the `shape`
-    given. Additional dimensions may need to be mapped to 0 or
-    removed.
-
-    Args:
-        big_index : multidimensional index of bigger tensor
-        big_shape : tensor shape of bigger tensor
-        shape : tensor shape of smaller tensor
-        out_index : multidimensional index of smaller tensor
-
-    Returns:
-        None
-    """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    for i, dim in enumerate(strides_from_shape(shape)):
+        idx, ordinal = divmod(ordinal, dim)
+        out_index[i] = idx
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -101,11 +78,50 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     Raises:
         IndexingError : if cannot broadcast
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    if len(shape1) < len(shape2):
+        smaller = shape1
+        larger = shape2
+    else:
+        smaller = shape2
+        larger = shape1
+
+    len_diff = len(larger) - len(smaller)
+    smaller = [1] * len_diff + list(smaller)
+
+    res = []
+    for s1, s2 in zip(smaller, larger):
+        if s1 == 1 or s2 == 1:
+            res.append(max(s1, s2))
+        elif s1 == s2:
+            res.append(s1)
+        else:
+            raise IndexingError
+
+    return tuple(res)
 
 
-def strides_from_shape(shape: UserShape) -> UserStrides:
+def broadcast_index(big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex) -> None:
+    """
+    Convert a `big_index` into `big_shape` to a smaller `out_index`
+    into `shape` following broadcasting rules. In this case
+    it may be larger or with more dimensions than the `shape`
+    given. Additional dimensions may need to be mapped to 0 or
+    removed.
+
+    Args:
+        big_index : multidimensional index of bigger tensor
+        big_shape : tensor shape of bigger tensor
+        shape : tensor shape of smaller tensor
+        out_index : multidimensional index of smaller tensor
+
+    Returns:
+        None
+    """
+    for i in range(-1, -len(out_index) - 1, -1):
+        out_index[i] = min(big_index[i], shape[i] - 1)
+
+
+def strides_from_shape(shape: Union[UserShape, npt.NDArray[np.int32]]) -> UserStrides:
     layout = [1]
     offset = 1
     for s in reversed(shape):
@@ -222,8 +238,11 @@ class TensorData:
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
 
-        # TODO: Implement for Task 2.1.
-        raise NotImplementedError("Need to implement for Task 2.1")
+        return TensorData(
+            storage=self._storage,
+            shape=tuple(self.shape[i] for i in order),
+            strides=tuple(self.strides[i] for i in order),
+        )
 
     def to_string(self) -> str:
         s = ""
@@ -236,7 +255,7 @@ class TensorData:
                     break
             s += l
             v = self.get(index)
-            s += f"{v:3.2f}"
+            s += f"{v:3.2f}"  # noqa: E231
             l = ""
             for i in range(len(index) - 1, -1, -1):
                 if index[i] == self.shape[i] - 1:
