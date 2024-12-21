@@ -8,19 +8,19 @@ from . import operators
 from .autodiff import Context
 
 if TYPE_CHECKING:
-    from typing import Tuple
+    from typing import Tuple, Any
 
     from .scalar import Scalar, ScalarLike
 
 
-def wrap_tuple(x):  # type: ignore
+def wrap_tuple(x) -> Tuple[Any]:  # type: ignore
     "Turn a possible value into a tuple"
     if isinstance(x, tuple):
         return x
     return (x,)
 
 
-def unwrap_tuple(x):  # type: ignore
+def unwrap_tuple(x) -> Any:  # type: ignore
     "Turn a singleton tuple into a value"
     if len(x) == 1:
         return x[0]

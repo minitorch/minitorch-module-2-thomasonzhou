@@ -65,7 +65,7 @@ class Scalar:
     def __init__(
         self,
         v: float,
-        back: ScalarHistory = ScalarHistory(),
+        back: ScalarHistory | None = ScalarHistory(),
         name: Optional[str] = None,
     ):
         global _var_count
@@ -82,7 +82,7 @@ class Scalar:
     def __repr__(self) -> str:
         return "Scalar(val: %f, id: %d)" % (self.data, self.unique_id)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.unique_id
 
     def __mul__(self, b: ScalarLike) -> Scalar:
