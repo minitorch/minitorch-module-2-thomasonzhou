@@ -121,7 +121,7 @@ def broadcast_index(big_index: Index, big_shape: Shape, shape: Shape, out_index:
         out_index[i] = min(big_index[i], shape[i] - 1)
 
 
-def strides_from_shape(shape: UserShape) -> UserStrides:
+def strides_from_shape(shape: Union[UserShape, npt.NDArray[np.int32]]) -> UserStrides:
     layout = [1]
     offset = 1
     for s in reversed(shape):
@@ -255,7 +255,7 @@ class TensorData:
                     break
             s += l
             v = self.get(index)
-            s += f"{v:3.2f}"
+            s += f"{v:3.2f}"  # noqa: E231
             l = ""
             for i in range(len(index) - 1, -1, -1):
                 if index[i] == self.shape[i] - 1:
